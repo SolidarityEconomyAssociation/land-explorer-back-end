@@ -1,0 +1,107 @@
+const { Sequelize, DataTypes, Model } = require('sequelize');
+
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+/**
+ * CORE Database
+ */
+export const sequelize = new Sequelize(process.env.DATABASE_NAME, process.env.DATABASE_USER, process.env.DATABASE_PASSWORD ?? "", {
+  host: process.env.DATABASE_HOST ?? 'localhost',
+  dialect: 'mysql'
+});
+
+const UserModel = sequelize.define('User', {
+  // Model attributes are defined here
+  first_name: { type: DataTypes.STRING, allowNull: false },
+  last_name: { type: DataTypes.STRING, allowNull: false },
+  address1: DataTypes.STRING,
+  address2: DataTypes.STRING,
+  city: DataTypes.STRING,
+  phone: DataTypes.STRING,
+  postcode: DataTypes.STRING,
+
+  marketing: DataTypes.BOOLEAN,
+  organisation: DataTypes.STRING,
+  organisation_activity: DataTypes.STRING,
+  organisation_number: DataTypes.STRING,
+  organisation_type: DataTypes.STRING,
+  council_id: { type: DataTypes.INTEGER, allowNull: false },
+
+  username: { type: DataTypes.STRING, allowNull: false },
+  password: { type: DataTypes.STRING, allowNull: false },
+  access: DataTypes.INTEGER,                             // 1 = member, 2 = admin
+  enabled: DataTypes.INTEGER,
+  is_super_user: { type: DataTypes.BOOLEAN, allowNull: false },
+
+  created_date: Sequelize.DATE,
+  last_modified: Sequelize.DATE,
+
+}, {
+  tableName: 'user',
+  createdAt: 'created_date',
+  updatedAt: 'last_modified',
+});
+
+const MapModel = sequelize.define('Map', {
+  name: { type: DataTypes.STRING, allowNull: false },
+  data: { type: DataTypes.TEXT, allowNull: false },
+  deleted: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: 0 },
+  created_date: Sequelize.DATE,
+  last_modified: Sequelize.DATE,
+
+}, {
+  tableName: 'map',
+  createdAt: 'created_date',
+  updatedAt: 'last_modified',
+});
+
+const UserMapModel = sequelize.define('UserMap', {
+  map_id: { type: DataTypes.BIGINT, references: { model: MapModel, key: 'id' } },
+  user_id: { type: DataTypes.BIGINT, references: { model: UserModel, key: 'id' } },
+  access: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
+  viewed: { type: DataTypes.TEXT, allowNull: false, defaultValue: 0 },
+  created_date: Sequelize.DATE,
+}, {
+  tableName: 'user_map',
+  createdAt: 'created_date',
+  updatedAt: false,
+});
+
+const PendingUserMapModel = sequelize.define('PendingUserMap', {
+  map_id: { type: DataTypes.BIGINT, references: { model: MapModel, key: 'id' } },
+  access: { type: DataTypes.INTEGER, allowNull: false },
+  email_address: { type: DataTypes.STRING, allowNull: false },
+  created_date: Sequelize.DATE,
+}, {
+  tableName: 'pending_user_map',
+  createdAt: 'created_date',
+  updatedAt: false,
+});
+
+UserModel.hasMany(UserMapModel, { foreignKey: { name: 'user_id' } });
+MapModel.hasMany(UserMapModel, { foreignKey: { name: 'map_id' } });
+
+UserMapModel.belongsTo(UserModel, { foreignKey: { name: 'user_id' } });
+UserMapModel.belongsTo(MapModel, { foreignKey: { name: 'map_id' } });
+
+MapModel.hasMany(PendingUserMapModel, { foreignKey: { name: 'map_id' } });
+
+export const User = UserModel;
+export const Map = MapModel;
+export const UserMap = UserMapModel;
+export const PendingUserMap = PendingUserMapModel;
+
+/**
+ * Polygon Database
+ */
+export const polygonDbSequelize = new Sequelize(
+  process.env.POLYGON_DATABASE_NAME,
+  process.env.POLYGON_DATABASE_USER,
+  process.env.POLYGON_DATABASE_PASSWORD ?? "",
+  {
+    host: process.env.POLYGON_DATABASE_HOST ?? 'localhost',
+    dialect: 'mysql'
+  }
+);
