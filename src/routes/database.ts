@@ -60,6 +60,7 @@ async function registerUser(request: Request, h: ResponseToolkit): Promise<Respo
  * @returns 
  */
 async function loginUser(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
+    console.log("hello")
 
     try {
         let payload: any = request.payload;
@@ -322,7 +323,7 @@ export const databaseRoutes: ServerRoute[] = [
     { method: "POST", path: "/token", handler: loginUser, options: { auth: false } },
 
     // Authenticated users only
-    { method: "GET", path: "/api/user/details", handler: getAuthUserDetails },
+    { method: "GET", path: "/api/user/details/", handler: getAuthUserDetails },
     { method: "POST", path: "/api/user/email", handler: changeEmail, },
     { method: "POST", path: "/api/user/details", handler: changeUserDetail, },
     { method: "POST", path: "/api/user/password", handler: changePassword, },

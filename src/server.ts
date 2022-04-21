@@ -4,6 +4,7 @@ import Hapi from "@hapi/hapi";
 import { Request, Server } from "@hapi/hapi";
 import { databaseRoutes } from "./routes/database";
 import { mapRoutes } from "./routes/maps";
+import { markerRoutes } from "./routes/markers";
 
 const AuthBearer = require('hapi-auth-bearer-token');
 const jwt = require("jsonwebtoken");
@@ -68,6 +69,7 @@ export const init = async function (): Promise<Server> {
 
     server.route(databaseRoutes);
     server.route(mapRoutes);
+    server.route(markerRoutes)
 
     return server;
 };

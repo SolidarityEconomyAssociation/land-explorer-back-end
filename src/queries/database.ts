@@ -80,6 +80,56 @@ const PendingUserMapModel = sequelize.define('PendingUserMap', {
   updatedAt: false,
 });
 
+const DataGroupModel = sequelize.define('DataGroup', {
+  iddata_groups: { type: DataTypes.BIGINT, allowNull: false, primaryKey: true },
+  title: { type: DataTypes.STRING },
+}, {
+  tableName: 'data_groups',
+  createdAt: false,
+  updatedAt: false,
+});
+
+const MarkerModel = sequelize.define('Marker', {
+  idmarkers: { type: DataTypes.BIGINT, allowNull: false, primaryKey: true },
+  name: { type: DataTypes.STRING },
+  description: { type: DataTypes.STRING },
+  data_group_id: { type: DataTypes.BIGINT, references: { model: DataGroupModel, key: 'iddata_groups' }, allowNull: false },
+  location: { type: DataTypes.GEOMETRY('POINT'), allowNull: false }
+}, {
+  tableName: 'markers',
+  createdAt: false,
+  updatedAt: false,
+});
+
+const UserGroupModel = sequelize.define('UserGroup', {
+  iduser_groups: { type: DataTypes.BIGINT, allowNull: false, primaryKey: true },
+  name: { type: DataTypes.STRING, allowNull: false },
+}, {
+  tableName: 'user_groups',
+  createdAt: false,
+  updatedAt: false,
+});
+
+const DataGroupMembershipModel = sequelize.define('DataGroupMembership', {
+  iddata_group_memberships: { type: DataTypes.BIGINT, allowNull: false, primaryKey: true },
+  data_group_id: { type: DataTypes.BIGINT, references: { model: DataGroupModel, key: 'iddata_groups' }, allowNull: false },
+  user_group_id: { type: DataTypes.BIGINT, references: { model: UserGroupModel, key: 'iduser_groups' }, allowNull: false },
+}, {
+  tableName: 'data_group_memberships',
+  createdAt: false,
+  updatedAt: false,
+});
+
+const UserGroupMembershipModel = sequelize.define('UserGroupMembership', {
+  iduser_group_memberships: { type: DataTypes.BIGINT, allowNull: false, primaryKey: true },
+  user_id: { type: DataTypes.BIGINT, references: { model: UserModel, key: 'id' }, allowNull: false },
+  user_group_id: { type: DataTypes.BIGINT, references: { model: UserGroupModel, key: 'iduser_groups' }, allowNull: false },
+}, {
+  tableName: 'user_group_memberships',
+  createdAt: false,
+  updatedAt: false,
+});
+
 UserModel.hasMany(UserMapModel, { foreignKey: { name: 'user_id' } });
 MapModel.hasMany(UserMapModel, { foreignKey: { name: 'map_id' } });
 
@@ -92,6 +142,11 @@ export const User = UserModel;
 export const Map = MapModel;
 export const UserMap = UserMapModel;
 export const PendingUserMap = PendingUserMapModel;
+export const Marker = MarkerModel;
+export const DataGroup = DataGroupModel;
+export const DataGroupMembership = DataGroupMembershipModel;
+export const UserGroup = UserGroupModel;
+export const UserGroupMembership = UserGroupMembershipModel;
 
 /**
  * Polygon Database
