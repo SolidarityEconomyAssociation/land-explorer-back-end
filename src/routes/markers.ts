@@ -1,7 +1,15 @@
 import { Request, ResponseToolkit, ResponseObject, ServerRoute } from "@hapi/hapi";
 import { findDataGroupsByUserId } from "../queries/query";
 
-async function getDataGroups(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
+type DataGroupRequest = Request & {
+    auth: {
+        artifacts: {
+            user_id: number
+        }
+    }
+};
+
+async function getDataGroups(request: DataGroupRequest, h: ResponseToolkit): Promise<ResponseObject> {
     const dataGroups = await findDataGroupsByUserId(request.auth.artifacts.user_id)
 
     return h.response(dataGroups);

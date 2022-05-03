@@ -215,7 +215,7 @@ export async function getPolygon(sw_lng: number, sw_lat: number, ne_lng: number,
   Data groups and their contents
 */
 
-export async function findDataGroupsByUserId(userId: any) {
+export async function findDataGroupsByUserId(userId: number) {
   const user = await User.findOne({
     where: {
       id: userId
@@ -270,4 +270,65 @@ export async function findDataGroupsByUserId(userId: any) {
   }
 
   return dataGroups;
+}
+
+
+/* Queries for the public map views  */
+
+const publicUserId = -1;
+
+export async function findPublicMap(mapId: number) {
+  const publicMapView = await UserMap.findOne({
+    where: {
+      map_id: mapId,
+      user_id: publicUserId
+    }
+  })
+
+  if (publicMapView) {
+    const publicMap = await Map.findOne({
+      where: {
+        id: mapId
+      }
+    });
+
+    publicMap.data = JSON.parse(publicMap.data)
+
+    return publicMap;
+  }
+  else
+    return "No public map at this address."
+}
+
+export async function createPublicMapView(mapId: number, userId: number) {
+  const userMapView = await UserMap.findOne({
+    where: {
+      map_id: mapId,
+      user_id: userId
+    }
+  });
+
+  const readAccess = 1;
+  const readWriteAccess = 2;
+
+  if (userMapView.access == readWriteAccess) {
+    await UserMap.create({
+      map_id: mapId,
+      user_id: publicUserId,
+      access: readAccess,
+      viewed: 0
+    });
+
+    return {
+      success: true,
+      message: "Made map public",
+      URI: `/api/public/map/${mapId}`
+    };
+  }
+  else {
+    return {
+      success: false,
+      message: "You don't have write access to this map, so can't make it public."
+    };
+  }
 }
