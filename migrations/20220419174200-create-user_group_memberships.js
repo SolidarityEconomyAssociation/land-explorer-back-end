@@ -8,8 +8,8 @@ module.exports = {
             iduser_group_memberships INT NOT NULL,
             user_group_id INT NOT NULL,
             user_id INT NOT NULL,
-            PRIMARY KEY (iduser_group_memberships))
-        ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=latin1`
+            PRIMARY KEY (iduser_group_memberships)
+            ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=latin1`
         );
 
     },

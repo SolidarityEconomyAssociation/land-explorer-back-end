@@ -7,8 +7,8 @@ module.exports = {
             `CREATE TABLE data_groups (
         iddata_groups INT NOT NULL,
         title VARCHAR(45) NOT NULL,
-        PRIMARY KEY (iddata_groups))) 
-        ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=latin1`
+        PRIMARY KEY (iddata_groups)
+        ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=latin1`
         );
 
     },
