@@ -7,6 +7,7 @@ import { mapRoutes } from "./routes/maps";
 import { markerRoutes } from "./routes/markers";
 
 const AuthBearer = require('hapi-auth-bearer-token');
+const Inert = require('@hapi/inert');
 const jwt = require("jsonwebtoken");
 const query = require("./queries/query");
 
@@ -20,10 +21,11 @@ function index(request: Request): string {
 export const init = async function (): Promise<Server> {
     server = Hapi.server({
         port: process.env.PORT || 4000,
-        host: '0.0.0.0'
+        host: '0.0.0.0',
     });
 
     await server.register(AuthBearer);
+    await server.register(Inert);
 
     server.auth.strategy('simple', 'bearer-access-token', {
         allowQueryToken: true,              // optional, false by default

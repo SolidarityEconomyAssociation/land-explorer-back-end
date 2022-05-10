@@ -508,6 +508,23 @@ type PublicMapRequest = Request & {
     }
 }
 
+type FileResponseToolkit = ResponseToolkit & {
+    file: Function;
+}
+
+async function downloadMap(request: PublicMapRequest, h: FileResponseToolkit): Promise<ResponseObject> {
+    const { mapId } = request.params;
+
+    //check access and prepare zip file
+    console.log("hello ", mapId)
+
+    const response = h.file('./example zip.zip', {
+        mode: 'attachment'
+    });
+
+    return response;
+}
+
 async function setMapPublic(request: PublicMapRequest, h: ResponseToolkit): Promise<ResponseObject> {
     const { mapId } = request.payload;
     const { user_id } = request.auth.artifacts;
@@ -531,6 +548,7 @@ export const mapRoutes: ServerRoute[] = [
     { method: "POST", path: "/api/user/map/share/sync/", handler: mapSharing },
     { method: "POST", path: "/api/user/map/delete/", handler: deleteMap },
     { method: "POST", path: "/api/user/map/share/public", handler: setMapPublic },
+    { method: "GET", path: "/api/user/map/download/{mapId}", handler: downloadMap },
     { method: "GET", path: "/api/user/maps/", handler: GetUserMaps },
     { method: "GET", path: "/api/ownership/", handler: GetLandOwnershipPolygon },
     // public method to see maps
