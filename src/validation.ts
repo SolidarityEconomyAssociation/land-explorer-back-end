@@ -73,8 +73,8 @@ export class Validation {
       };
     }
 
-    let optionalWithMax = function (validator: Validation, data: any, key: string, max: number, label: string) {
-      if (data[key] !== null) {
+    function optionalWithMax(validator: Validation, data: any, key: string, max: number, label: string) {
+      if (data[key] !== null && data[key] !== "") {
         if (Joi.string().max(max).validate(data[key]).error) {
           validator.addErrorMessage(key, label + " field cannot be longer than " + max + " characters.");
         };
@@ -236,7 +236,7 @@ export class Validation {
    * @param data
    * @returns 
    */
-   async validateEid(data: any) {
+  async validateEid(data: any) {
 
     if (Joi.string().validate(data?.eid, { presence: "required" }).error) {
       this.addErrorMessage("eid", "The eid field is required.")
@@ -251,7 +251,7 @@ export class Validation {
    * @param data
    * @returns 
    */
-   async validateShareMap(data: any) {
+  async validateShareMap(data: any) {
 
     // eid required
     if (Joi.string().validate(data?.eid, { presence: "required" }).error) {
@@ -272,7 +272,7 @@ export class Validation {
    * @param data
    * @returns 
    */
-   async validateLandOwnershipPolygonRequest(data: any) {
+  async validateLandOwnershipPolygonRequest(data: any) {
 
     // sw_lng, sw_lat, ne_lng, ne_lat required
 
