@@ -1,5 +1,17 @@
 const { QueryTypes } = require('sequelize');
-const { sequelize, User, Map, UserMap, PendingUserMap, polygonDbSequelize } = require('./database');
+const {
+  sequelize,
+  User,
+  Map,
+  UserMap,
+  PendingUserMap,
+  polygonDbSequelize,
+  Marker,
+  DataGroup,
+  DataGroupMembership,
+  UserGroup,
+  UserGroupMembership
+} = require('./database');
 const bcrypt = require('bcrypt');
 const helper = require('./helpers');
 
@@ -146,7 +158,7 @@ export async function getPolygon(sw_lng: number, sw_lat: number, ne_lng: number,
   const y4 = ne_lat;
 
   const searchArea = "POLYGON ((" + x1 + " " + y1 + ", " + x2 + " " + y2 + ", " + x3 + " " + y3 + ", " + x4 + " " + y4 + ", " + x1 + " " + y1 + "))";
-  
+
   const query = `SELECT 
   lop.id as id, 
   lop.poly_id as poly_id, 
@@ -195,6 +207,138 @@ export async function getPolygon(sw_lng: number, sw_lat: number, ne_lng: number,
   LEFT JOIN land_ownerships lo
   ON lop.title_no = lo.title_no
   WHERE ST_Intersects(lop.geom, ST_GeomFromText("` + searchArea + `"))`;
-  
+
   return await polygonDbSequelize.query(query, { type: QueryTypes.SELECT });
+}
+
+/* 
+  Data groups and their contents
+*/
+
+export async function findDataGroupsByUserId(userId: number) {
+  const user = await User.findOne({
+    where: {
+      id: userId
+    }
+  });
+
+  const userGroupMemberships = await UserGroupMembership.findAll({
+    where: {
+      user_id: user.id
+    }
+  });
+
+  const userGroups: any[] = [];
+
+  for (let membership of userGroupMemberships) {
+    userGroups.push(await UserGroup.findOne({
+      where: {
+        iduser_groups: membership.user_group_id
+      }
+    }))
+  }
+
+  let dataGroupMemberships: any[] = [];
+
+  for (let group of userGroups) {
+    dataGroupMemberships = dataGroupMemberships.concat(await DataGroupMembership.findAll({
+      where: {
+        user_group_id: group.iduser_groups
+      }
+    }
+    ))
+  }
+
+  let dataGroups: any[] = [];
+
+  for (let membership of dataGroupMemberships) {
+    dataGroups = dataGroups.concat(
+      await DataGroup.findAll({
+        where: {
+          iddata_groups: membership.data_group_id
+        }
+      })
+    )
+  }
+
+  for (let dataGroup of dataGroups) {
+    dataGroup.dataValues.markers = await Marker.findAll({
+      where: {
+        data_group_id: dataGroup.iddata_groups
+      }
+    })
+  }
+
+  return dataGroups;
+}
+
+
+/* Queries for the public map views  */
+
+const publicUserId = -1;
+
+export async function findPublicMap(mapId: number) {
+  const publicMapView = await UserMap.findOne({
+    where: {
+      map_id: mapId,
+      user_id: publicUserId
+    }
+  })
+
+  if (publicMapView) {
+    const publicMap = await Map.findOne({
+      where: {
+        id: mapId
+      }
+    });
+
+    publicMap.data = JSON.parse(publicMap.data)
+
+    return publicMap;
+  }
+  else
+    return "No public map at this address."
+}
+
+export async function createPublicMapView(mapId: number, userId: number) {
+  const userMapView = await UserMap.findOne({
+    where: {
+      map_id: mapId,
+      user_id: userId
+    }
+  });
+
+  const readAccess = 1;
+  const readWriteAccess = 2;
+
+  if (userMapView.access == readWriteAccess) {
+    const publicViewExists = await UserMap.findOne({
+      where: {
+        map_id: mapId,
+        user_id: publicUserId,
+        access: readAccess,
+      }
+    });
+
+    if (!publicViewExists) {
+      await UserMap.create({
+        map_id: mapId,
+        user_id: publicUserId,
+        access: readAccess,
+        viewed: 0
+      });
+    }
+
+    return {
+      success: true,
+      message: "Made map public",
+      URI: `/api/public/map/${mapId}`
+    };
+  }
+  else {
+    return {
+      success: false,
+      message: "You don't have write access to this map, so can't make it public."
+    };
+  }
 }

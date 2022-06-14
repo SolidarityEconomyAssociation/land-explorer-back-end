@@ -1,5 +1,6 @@
 import { Request, ResponseToolkit, ResponseObject, ServerRoute } from "@hapi/hapi";
 import { Validation } from '../validation';
+import { findPublicMap, createPublicMapView } from "../queries/query";
 
 const Model = require('../queries/database');
 const { Op } = require("sequelize");
@@ -447,7 +448,7 @@ async function GetUserMaps(request: Request, h: ResponseToolkit, d: any): Promis
                     sharedWith: sharedWith,
                 },
                 createdDate: userMap.created_date,
-                access: userMap == 2 ? "WRITE" : "READ",
+                access: userMap.access == 2 ? "WRITE" : "READ",
                 viewed: userMap.viewed == 1
             }
         });
@@ -496,11 +497,60 @@ async function GetLandOwnershipPolygon(request: Request, h: ResponseToolkit, d: 
     }
 }
 
+type PublicMapRequest = Request & {
+    payload: {
+        mapId: number
+    },
+    auth: {
+        artifacts: {
+            user_id: number
+        }
+    }
+}
+
+type FileResponseToolkit = ResponseToolkit & {
+    file: Function;
+}
+
+async function downloadMap(request: PublicMapRequest, h: FileResponseToolkit): Promise<ResponseObject> {
+    const { mapId } = request.params;
+
+    //check access and prepare zip file
+    console.log("hello ", mapId)
+
+    const response = h.file('./example zip.zip', {
+        mode: 'attachment'
+    });
+
+    return response;
+}
+
+async function setMapPublic(request: PublicMapRequest, h: ResponseToolkit): Promise<ResponseObject> {
+    const { mapId } = request.payload;
+    const { user_id } = request.auth.artifacts;
+
+    const publicMapAddress = await createPublicMapView(mapId, user_id);
+
+    return h.response(publicMapAddress);
+}
+
+async function getPublicMap(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
+    const { mapId } = request.params;
+
+    const publicMapView = await findPublicMap(mapId);
+
+    return h.response(publicMapView);
+}
+
 export const mapRoutes: ServerRoute[] = [
     { method: "POST", path: "/api/user/map/save/", handler: saveMap },
     { method: "POST", path: "/api/user/map/view/", handler: setMapAsViewed },
     { method: "POST", path: "/api/user/map/share/sync/", handler: mapSharing },
     { method: "POST", path: "/api/user/map/delete/", handler: deleteMap },
+    { method: "POST", path: "/api/user/map/share/public", handler: setMapPublic },
+    { method: "GET", path: "/api/user/map/download/{mapId}", handler: downloadMap },
     { method: "GET", path: "/api/user/maps/", handler: GetUserMaps },
     { method: "GET", path: "/api/ownership/", handler: GetLandOwnershipPolygon },
+    // public method to see maps
+    { method: "GET", path: "/api/public/map/{mapId}", handler: getPublicMap, options: { auth: false } },
 ];
