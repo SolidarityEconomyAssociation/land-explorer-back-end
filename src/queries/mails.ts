@@ -2,29 +2,34 @@ const { QueryTypes } = require('sequelize');
 const { sequelize, User, Map, UserMap, PendingUserMap } = require('./database');
 const bcrypt = require('bcrypt');
 
+const sgMail = require("@sendgrid/mail");
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 let loginLink = "https://app.landexplorer.cc/auth/";
-let sender = "no-reply@landexplorer.cc";
+let sender = "support@digitalcommons.coop";
 let senderName = "Land Explorer";
 
 export const sendRegisterEmail = async (recipient: string, name: string) => {
-  let body = "Dear " //+ capitalizeFirstLetter(name) + ",";
+  let body = `Dear ${name},`;
   body += "<br /><br />Thank you for registering with Land Explorer.";
   body += "<br />You can <a href=\"" + loginLink + "\">login here</a>.";
   body += "<br />We're excited to see how you use this tool, to find information on the land around you!";
   body += "<br /><br />Many thanks,";
-  body += "<br />The Shared Assets Team";
+  body += "<br />The Digital Commons Team";
 
-  // mail = new MailMessage();
+  const msg = {
+    to: recipient,
+    from: {
+      name: senderName,
+      email: sender
+    },
+    subject: name + ", you have registered on Land Explorer!",
+    html: body,
+  };
 
-  // //Setting From , To and CC
-  // mail.From = new MailAddress(sender, senderName);
-  // mail.To.Add(new MailAddress(recipient));
-  // mail.Subject = "Your Land Explorer Registration";
-  // mail.Body = body;
-  // mail.BodyEncoding = System.Text.Encoding.UTF8;
-  // mail.IsBodyHtml = true;
-
-  // smtpClient.Send(mail);
+  sgMail.send(msg).catch((error: Error) => {
+    console.error(error);
+  });
 }
 
 export const resetPassword = async (recipient: string, name: string, newPassword: string) => {
@@ -33,19 +38,21 @@ export const resetPassword = async (recipient: string, name: string, newPassword
   body += "<br />You can <a href=\"" + loginLink + "\">login here</a>.";
   body += "<br />You can change your password to something more memorable in My Account, once logged in.";
   body += "<br /><br />Many thanks,";
-  body += "<br />The Shared Assets Team";
+  body += "<br />The Digital Commons Team";
 
-  // mail = new MailMessage();
+  const msg = {
+    to: recipient,
+    from: {
+      name: senderName,
+      email: sender
+    },
+    subject: name + ", you have reset your Land Explorer password",
+    html: body,
+  };
 
-  // //Setting From , To and CC
-  // mail.From = new MailAddress(sender, senderName);
-  // mail.To.Add(new MailAddress(recipient));
-  // mail.Subject = "Your Land Explorer Password";
-  // mail.Body = body;
-  // mail.BodyEncoding = System.Text.Encoding.UTF8;
-  // mail.IsBodyHtml = true;
-
-  // smtpClient.Send(mail);
+  sgMail.send(msg).catch((error: Error) => {
+    console.error(error);
+  });
 }
 
 export const resetPasswordNotFound = async (recipient: string) => {
@@ -55,23 +62,25 @@ export const resetPasswordNotFound = async (recipient: string) => {
   body += "<br />However, there is no Land Explorer account associated with this email.";
   body += "<br />If you requested this password reset, a different email address might have been used for the Land Explorer account.";
   body += "<br /><br />Many thanks,";
-  body += "<br />The Shared Assets Team";
+  body += "<br />The Digital Commons Team";
 
-  // mail = new MailMessage();
+  const msg = {
+    to: recipient,
+    from: {
+      name: senderName,
+      email: sender
+    },
+    subject: "You don't have a Land Explorer account at this email",
+    html: body,
+  };
 
-  // //Setting From , To and CC
-  // mail.From = new MailAddress(sender, senderName);
-  // mail.To.Add(new MailAddress(recipient));
-  // mail.Subject = "Your Land Explorer Password";
-  // mail.Body = body;
-  // mail.BodyEncoding = System.Text.Encoding.UTF8;
-  // mail.IsBodyHtml = true;
-
-  // smtpClient.Send(mail);
+  sgMail.send(msg).catch((error: Error) => {
+    console.error(error);
+  });
 }
 
 export const shareMapRegistered = async (
-  recipient_email: string,
+  recipient: string,
   recipient_firstname: string,
   sharer_fullname: string,
   sharer_firstname: string,
@@ -83,26 +92,28 @@ export const shareMapRegistered = async (
   body += "<p>" + capitalizeFirstLetter(sharer_fullname) + " has invited you to join Land Explorer and has given you access to their map: " + map_name + "</p>";
   body += "<p>You can register for an account by clicking <a href=\"" + loginLink + "\">here</a>.</p>";
   body += "<p>Once logged in, you can then view the map " + capitalizeFirstLetter(sharer_firstname) + " shared with you.</p>";
-  body += "<p>Many thanks,<br/><br/>The Shared Assets Team</p>";
+  body += "<p>Many thanks,<br/><br/>The Digital Commons Team</p>";
   body += "</body></html>";
 
-  // mail = new MailMessage();
+  const msg = {
+    to: recipient,
+    from: {
+      name: senderName,
+      email: sender
+    },
+    subject: recipient_firstname + `, ${sharer_fullname} has shared a Land Explorer map with you`,
+    html: body,
+  };
 
-  // ////Setting From , To and CC
-  // mail.From = new MailAddress(sender, senderName);
-  // mail.To.Add(new MailAddress(recipient_email));
-  // mail.Subject = "You’re invited to join " + helperFunctions.UppercaseFirst(sharer_fullname) + " on Land Explorer";
-  // mail.Body = body;
-  // mail.BodyEncoding = System.Text.Encoding.UTF8;
-  // mail.IsBodyHtml = true;
-
-  // smtpClient.Send(mail);
+  sgMail.send(msg).catch((error: Error) => {
+    console.error(error);
+  });
 }
 
 
 
 export const shareMapUnregistered = async (
-  recipient_email: string,
+  recipient: string,
   sharer_fullname: string,
   sharer_firstname: string,
   map_name: string,
@@ -113,20 +124,22 @@ export const shareMapUnregistered = async (
   body += "<p>" + capitalizeFirstLetter(sharer_fullname) + " has invited you to join Land Explorer and has given you access to their map: " + map_name + "</p>";
   body += "<p>You can register for an account by clicking <a href=\"" + loginLink + "\">here</a>.</p>";
   body += "<p>Once logged in, you can then view the map " + capitalizeFirstLetter(sharer_firstname) + " shared with you.</p>";
-  body += "<p>Many thanks,<br/><br/>The Shared Assets Team</p>";
+  body += "<p>Many thanks,<br/><br/>The Digital Commons Team</p>";
   body += "</body></html>";
 
-  // mail = new MailMessage();
+  const msg = {
+    to: recipient,
+    from: {
+      name: senderName,
+      email: sender
+    },
+    subject: `${sharer_fullname} has shared a Land Explorer map with you and invited you to register`,
+    html: body,
+  };
 
-  // ////Setting From , To and CC
-  // mail.From = new MailAddress(sender, senderName);
-  // mail.To.Add(new MailAddress(recipient_email));
-  // mail.Subject = "You’re invited to join " + capitalizeFirstLetter(sharer_fullname) + " on Land Explorer";
-  // mail.Body = body;
-  // mail.BodyEncoding = System.Text.Encoding.UTF8;
-  // mail.IsBodyHtml = true;
-
-  // smtpClient.Send(mail);
+  sgMail.send(msg).catch((error: Error) => {
+    console.error(error);
+  });
 }
 
 function capitalizeFirstLetter(word: string) {
