@@ -514,13 +514,81 @@ type FileResponseToolkit = ResponseToolkit & {
 
 async function downloadMap(request: PublicMapRequest, h: FileResponseToolkit): Promise<ResponseObject> {
     const { mapId } = request.params;
+    const { user_id } = request.auth.artifacts;
 
-    //check access and prepare zip file
-    console.log("hello ", mapId)
+    const userMap = await Model.UserMap.findOne({
+        where: {
+            user_id,
+            map_id: mapId
+        }
+    });
+    if (!userMap)
+        return h.response({ success: false, message: "User account doesn't have read access to that map" });
 
-    const response = h.file('./example zip.zip', {
+    const map = await Model.Map.findOne({
+        where: {
+            id: mapId
+        }
+    });
+
+    const mapData = JSON.parse(map.data);
+
+    const polygons = mapData.drawings.polygons.map((polygon: any) => {
+        polygon.data.properties = { name: polygon.name, length: polygon.length, area: polygon.area };
+        return polygon.data;
+    });
+    const markers = mapData.markers.markers.map((marker: any) => ({
+        type: "Feature",
+        geometry: {
+            type: "Point",
+            coordinates: marker.coordinates
+        },
+        properties: {
+            name: marker.name
+        }
+    }));
+
+    const dataGroupMarkers: any[] = [];
+    mapData.mapLayers.myDataLayers.forEach((layer: any) => {
+        layer.markers.forEach((marker: any) => {
+            dataGroupMarkers.push({
+                type: "Feature",
+                geometry: marker.location,
+                properties: {
+                    name: marker.name,
+                    description: marker.description,
+                    group: layer.title
+                }
+            })
+        })
+    });
+
+    const features = [...polygons, ...markers, ...dataGroupMarkers];
+
+    const shapeFileLocation = `./data/shapefiles/${map.name}-${Date.now()}.zip`;
+
+    const { convert } = require('geojson2shp');
+    const convertOptions = {
+        layer: 'land-explorer-layer',
+        targetCrs: 2154
+    };
+
+    //create a new shapefile in the shape file location
+    await convert(features, shapeFileLocation, convertOptions);
+
+    const response = h.file(shapeFileLocation, {
         mode: 'attachment'
     });
+
+    const deleteFile = () => {
+        const fs = require('fs');
+        fs.unlink(shapeFileLocation, (error: any) => {
+            if (error)
+                console.log(error)
+        });
+    }
+
+    setTimeout(deleteFile, 1000);
 
     return response;
 }
