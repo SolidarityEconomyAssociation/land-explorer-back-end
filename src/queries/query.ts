@@ -238,38 +238,43 @@ export async function findDataGroupsByUserId(userId: number) {
     }))
   }
 
-  let dataGroupMemberships: any[] = [];
+  const userGroupsAndData: any[] = [];
 
   for (let group of userGroups) {
-    dataGroupMemberships = dataGroupMemberships.concat(await DataGroupMembership.findAll({
+    const dataGroupMemberships = await DataGroupMembership.findAll({
       where: {
         user_group_id: group.iduser_groups
       }
+    })
+
+    let dataGroups: any[] = [];
+
+    for (let membership of dataGroupMemberships) {
+      dataGroups = dataGroups.concat(
+        await DataGroup.findAll({
+          where: {
+            iddata_groups: membership.data_group_id
+          }
+        })
+      )
     }
-    ))
-  }
 
-  let dataGroups: any[] = [];
-
-  for (let membership of dataGroupMemberships) {
-    dataGroups = dataGroups.concat(
-      await DataGroup.findAll({
+    for (let dataGroup of dataGroups) {
+      dataGroup.dataValues.markers = await Marker.findAll({
         where: {
-          iddata_groups: membership.data_group_id
+          data_group_id: dataGroup.iddata_groups
         }
       })
-    )
-  }
+    }
 
-  for (let dataGroup of dataGroups) {
-    dataGroup.dataValues.markers = await Marker.findAll({
-      where: {
-        data_group_id: dataGroup.iddata_groups
-      }
+    userGroupsAndData.push({
+      name: group.name,
+      id: group.iduser_groups,
+      dataGroups
     })
   }
 
-  return dataGroups;
+  return userGroupsAndData;
 }
 
 
