@@ -297,7 +297,15 @@ export async function findPublicMap(mapId: number) {
       }
     });
 
-    publicMap.data = JSON.parse(publicMap.data)
+    publicMap.data = JSON.parse(publicMap.data);
+
+    for (let dataGroup of publicMap.data.mapLayers.myDataLayers) {
+      dataGroup.markers = await Marker.findAll({
+        where: {
+          data_group_id: dataGroup.iddata_groups
+        }
+      });
+    }
 
     return publicMap;
   }
