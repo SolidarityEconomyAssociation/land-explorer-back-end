@@ -549,8 +549,13 @@ async function downloadMap(request: PublicMapRequest, h: FileResponseToolkit): P
     }));
 
     const dataGroupMarkers: any[] = [];
-    mapData.mapLayers.myDataLayers.forEach((layer: any) => {
-        layer.markers.forEach((marker: any) => {
+
+    for (let layer of mapData.mapLayers.myDataLayers) {
+        const markers = await Model.Marker.findAll({
+            data_group_id: layer.iddata_groups
+        });
+
+        markers.forEach((marker: any) => {
             dataGroupMarkers.push({
                 type: "Feature",
                 geometry: marker.location,
@@ -560,8 +565,8 @@ async function downloadMap(request: PublicMapRequest, h: FileResponseToolkit): P
                     group: layer.title
                 }
             })
-        })
-    });
+        });
+    }
 
     const features = [...polygons, ...markers, ...dataGroupMarkers];
 
