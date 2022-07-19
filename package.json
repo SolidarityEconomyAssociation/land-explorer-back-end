@@ -8,7 +8,9 @@
     "dev:tsc": "tsc --watch -p .",
     "dev:serve": "nodemon -e js -w lib src/main.ts",
     "dev": "run-p dev:*",
-    "test": "lab -v **/*.test.js"
+    "test": "lab -v **/*.test.js",
+    "build": "tsc",
+    "serve": "pm2 start lib/main.js"
   },
   "author": "Hansen Salim",
   "dependencies": {
